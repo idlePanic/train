@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style>
+        html, body{
+            min-height: 100%;
+        }
+
+        body{
+            /*margin: 0;*/
+            /*padding: 0;*/
+            /*background: #228daa; !* Old browsers *!*/
+            /*background: -moz-linear-gradient(top, #228daa 0%, #6cc9bd 50%, #c8ea7e 100%); !* FF3.6+ *!*/
+            /*background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#228daa), color-stop(50%,#6cc9bd), color-stop(100%,#c8ea7e)); !* Chrome,Safari4+ *!*/
+            /*background: -webkit-linear-gradient(top, #228daa 0%,#6cc9bd 50%,#c8ea7e 100%); !* Chrome10+,Safari5.1+ *!*/
+            /*background: -o-linear-gradient(top, #228daa 0%,#6cc9bd 50%,#c8ea7e 100%); !* Opera 11.10+ *!*/
+            /*background: -ms-linear-gradient(top, #228daa 0%,#6cc9bd 50%,#c8ea7e 100%); !* IE10+ *!*/
+            /*background: linear-gradient(to bottom, #228daa 0%,#6cc9bd 50%,#c8ea7e 100%); !* W3C *!*/
+            /*filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#228daa', endColorstr='#c8ea7e',GradientType=0 ); !* IE6-9 *!*/
+            /*font-family:"Helvetica Neue",sans-serif;*/
+            /*font-weight: 300;*/
+            /*color: #404040;*/
+        }
+
+        .clear-both{clear:both;}
+
+        h1{
+            color: #FFFFFF;
+            font-weight: 300;
+            margin: 0;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .block{
+            background-color: rgba(255, 255, 255, 0.5);
+            width: 60%;
+            margin:0 auto;
+            margin-bottom: 30px;
+            padding: 10px;
+            text-align: center;
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+        }
+
+        label.button{
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            background-color: #FFFFFF;
+            border: 1px solid #6C6C6C;
+            color: #6C6C6C;
+            padding: 5px 10px;
+            margin: 5px 0;
+            display: inline-block;
+            -webkit-transition: all 200ms linear;
+            -moz-transition: all 200ms linear;
+            -ms-transition: all 200ms linear;
+            -o-transition: all 200ms linear;
+            transition: all 200ms linear;
+        }
+
+        label.button:hover{
+            background-color:#F0F0F0;
+            cursor: pointer;
+            -webkit-transition: all 200ms linear;
+            -moz-transition: all 200ms linear;
+            -ms-transition: all 200ms linear;
+            -o-transition: all 200ms linear;
+            transition: all 200ms linear;
+        }
+
+        input#images{display: none;}
+
+        #multiple-file-preview{border-top: 1px solid rgba(0, 0, 0, 0.11); margin-top: 10px; padding: 10px;}
+
+        #sortable {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            min-height: 300px;
+        }
+
+        #sortable li {
+            margin: 3px 3px 3px 0;
+            float: left;
+            width: 100px;
+            text-align: center;
+            position: relative;
+            background-color: #FFFFFF;
+        }
+
+        #sortable li, #sortable li img
+        {
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+        }
+
+        #sortable li div.order-number{
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 15px;
+            heigth: 15px;
+            background-color: #2B91E3;
+            color: #FFFFFF;
+            font-size: 12px;
+            -webkit-border-radius: 20px;
+            -moz-border-radius: 20px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>Multiple Upload with preview and order</h1>
+<div class="block">
+    <form method="post" action="get.php">
+        <label class="button" for="images">Upload Images</label>
+        <input type="file[]" name="file" id="images" multiple="multiple"/>
+        <div id="multiple-file-preview">
+            <ul id="sortable">
+                <div class="clear-both"></div>
+            </ul>
+        </div>
+        <button type="submit" value="ok">OK</button>
+    </form>
+</div>
+</body>
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+<script>
+    $(function(){
+
+        $('#images').change(function(e) {
+            var files = e.target.files;
+            for (var i = 0; i <= files.length; i++) {
+
+                // when i == files.length reorder and break
+                if(i==files.length){
+                    // need timeout to reorder beacuse prepend is not done
+                    setTimeout(function(){ reorderImages(); }, 100);
+                    break;
+                }
+
+                var file = files[i];
+                var reader = new FileReader();
+
+                reader.onload = (function(file) {
+                    return function(event){
+                        $('#sortable').prepend('<li class="ui-state-default" data-order=0 data-id="'+file.lastModified+'"><img src="' + event.target.result + '" style="width:100%;" /> <div class="order-number">0</div></li>');
+                    };
+                })(file);
+
+                reader.readAsDataURL(file);
+            }// end for;
+
+        });
+
+        $('#sortable').sortable();
+        $('#sortable').disableSelection();
+
+        //sortable events
+        $('#sortable').on('sortbeforestop',function(event){
+
+            reorderImages();
+
+        });
+
+
+        function reorderImages(){
+            // get the items
+            var images = $('#sortable li');
+
+            var i=0, nrOrder=0;
+            for(i;i<images.length;i++){
+
+                var image = $(images[i]);
+
+                if( image.hasClass('ui-state-default') && !image.hasClass('ui-sortable-placeholder') ){
+                    image.attr('data-order', nrOrder);
+                    var orderNumberBox = image.find('.order-number');
+                    orderNumberBox.html(nrOrder+1);
+                    nrOrder++;
+                }// end if;
+
+            }// end for;
+        }
+
+    });
+</script>
+</html>
+
